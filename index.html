@@ -9,18 +9,15 @@
 @import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap');
 
 :root {
-  --on:   #48494b;
-  --off:  #e3e5e4;
-  --bg:   #f0f1f0;
-  --card: #ffffff;
+  --on:     #48494b;
+  --off:    #e3e5e4;
+  --bg:     #f0f1f0;
+  --card:   #ffffff;
   --border: #d0d2d0;
-  --text: #48494b;
-  --text2: #9a9b9a;
-  --accent: #48494b;
-  --play-bg: #48494b;
-  --play-fg: #e3e5e4;
-  --head:  rgba(255,255,255,0.55);
-  --active-outline: #48494b;
+  --text:   #48494b;
+  --text2:  #9a9b9a;
+  --mel:    #3a6ea8;   /* melody accent */
+  --mel-bg: #eef3fa;
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
@@ -38,347 +35,211 @@ html, body {
   background: var(--card);
   border-bottom: 1px solid var(--border);
   padding: 12px 16px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  position: sticky;
-  top: 0;
-  z-index: 100;
+  display: flex; align-items: center; justify-content: space-between;
+  position: sticky; top: 0; z-index: 100;
 }
-
-.logo {
-  font-size: 13px;
-  font-weight: 700;
-  letter-spacing: 0.12em;
-  color: var(--on);
-}
+.logo { font-size: 13px; font-weight: 700; letter-spacing: .12em; color: var(--on); }
 .logo span { color: var(--text2); font-weight: 400; }
+.header-info { font-size: 10px; color: var(--text2); letter-spacing: .08em; }
 
-.header-info {
-  font-size: 10px;
-  color: var(--text2);
-  letter-spacing: 0.08em;
-}
-
-/* ── MAIN ── */
+/* ── APP ── */
 .app { max-width: 600px; margin: 0 auto; padding: 12px; display: flex; flex-direction: column; gap: 10px; }
 
-/* ── LOAD CARD ── */
-.card {
-  background: var(--card);
-  border: 1px solid var(--border);
-  padding: 12px;
-}
+/* ── CARD ── */
+.card { background: var(--card); border: 1px solid var(--border); padding: 12px; }
+.card-label { font-size: 9px; letter-spacing: .18em; color: var(--text2); text-transform: uppercase; margin-bottom: 8px; }
 
-.card-label {
-  font-size: 9px;
-  letter-spacing: 0.18em;
-  color: var(--text2);
-  text-transform: uppercase;
-  margin-bottom: 8px;
-}
-
-.load-row {
-  display: flex;
-  gap: 6px;
-  align-items: center;
-}
-
+/* ── LOAD ── */
+.load-row { display: flex; gap: 6px; align-items: center; }
 .id-input {
-  flex: 1;
-  background: var(--bg);
-  border: 1px solid var(--border);
-  color: var(--text);
-  font-family: 'Space Mono', monospace;
-  font-size: 16px; /* prevent zoom on iOS */
-  padding: 9px 11px;
-  outline: none;
-  transition: border-color .15s;
-  -webkit-appearance: none;
-  border-radius: 0;
+  flex: 1; background: var(--bg); border: 1px solid var(--border);
+  color: var(--text); font-family: 'Space Mono', monospace; font-size: 16px;
+  padding: 9px 11px; outline: none; transition: border-color .15s;
+  -webkit-appearance: none; border-radius: 0;
 }
 .id-input:focus { border-color: var(--on); }
 .id-input::placeholder { color: var(--border); }
 
 .load-btn {
-  background: var(--on);
-  border: none;
-  color: var(--off);
-  font-family: 'Space Mono', monospace;
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.1em;
-  padding: 9px 14px;
-  cursor: pointer;
-  transition: opacity .12s;
-  white-space: nowrap;
-  border-radius: 0;
-  -webkit-appearance: none;
-  min-height: 44px;
+  background: var(--on); border: none; color: var(--off);
+  font-family: 'Space Mono', monospace; font-size: 11px; font-weight: 700;
+  letter-spacing: .1em; padding: 9px 14px; cursor: pointer;
+  transition: opacity .12s; white-space: nowrap; border-radius: 0;
+  -webkit-appearance: none; min-height: 44px;
 }
 .load-btn:active { opacity: .7; }
 .load-btn:disabled { opacity: .3; cursor: not-allowed; }
 
-.status {
-  font-size: 9px;
-  letter-spacing: 0.08em;
-  color: var(--text2);
-  margin-top: 6px;
-  min-height: 13px;
-}
+.status { font-size: 9px; letter-spacing: .08em; color: var(--text2); margin-top: 6px; min-height: 13px; }
 .status.ok  { color: #3a8a4a; }
 .status.err { color: #c04040; }
 .status.loading { color: var(--text2); }
 
-/* ── GRID ── */
-.grid-wrap {
-  background: var(--card);
-  border: 1px solid var(--border);
-  padding: 8px;
-  position: relative;
-}
+/* ── GRID WRAPPER ── */
+.grid-wrap { background: var(--card); border: 1px solid var(--border); padding: 8px; }
+.grid-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+.step-info { font-size: 9px; letter-spacing: .1em; color: var(--text2); }
 
-.grid-header {
+/* Outer layout: labels column + pixel grid */
+.grid-outer {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 6px;
+  gap: 0;
+  width: 100%;
 }
 
-/* The 40×40 grid - square, full width */
+/* Labels strip — 8 rows of 5px height proportional to grid */
+.row-labels {
+  display: flex;
+  flex-direction: column;
+  width: 32px;
+  flex-shrink: 0;
+  /* Height matches pixel grid height, set via JS */
+}
+
+.row-label {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding-right: 4px;
+  font-size: 7px;
+  font-weight: 700;
+  letter-spacing: .06em;
+  color: var(--text2);
+  text-transform: uppercase;
+  border-right: 2px solid var(--border);
+  transition: color .15s, border-color .15s;
+  line-height: 1;
+  text-align: right;
+}
+.row-label.hit {
+  color: var(--on);
+  border-right-color: var(--on);
+}
+.row-label.mel-label {
+  color: var(--mel);
+  border-right-color: var(--mel);
+}
+
+/* ── PIXEL GRID ── */
 .pixel-grid {
+  flex: 1;
   display: grid;
   grid-template-columns: repeat(40, 1fr);
   grid-template-rows: repeat(40, 1fr);
-  width: 100%;
   aspect-ratio: 1 / 1;
-  position: relative;
-  cursor: pointer;
-  /* subtle track dividers via gap */
-  gap: 0;
   background: var(--border);
+  gap: 0;
 }
-
-/* Track band separators: subtle gap every 5 rows */
-/* We handle this with border-bottom on row 4, 9, 14, 19, 24, 29, 34, 39 */
 
 .px {
   background: var(--off);
   transition: background .04s;
-  border: 0.5px solid transparent;
-  position: relative;
 }
-
-/* Pixel-on = dark cell */
 .px.bit { background: var(--on); }
+.px.track-end { border-bottom: 1px solid rgba(72,73,75,0.2); }
 
-/* Active step in sequencer */
-.px.active {
-  background: var(--on);
-  box-shadow: inset 0 0 0 1px var(--off);
-}
-.px.bit.active {
-  background: var(--on);
-}
+/* Active step indicator — column tinted */
+.px.step-on:not(.bit) { background: rgba(72,73,75,0.13); }
 
-/* Playhead column */
-.px.head {
-  background: var(--off) !important;
-  opacity: 0.5;
-  mix-blend-mode: normal;
-}
-.px.bit.head {
-  background: var(--on) !important;
-  opacity: 0.6;
-}
+/* Playhead */
+.px.now { filter: brightness(1.55) contrast(0.65); z-index: 2; }
+.px.bit.now { filter: brightness(1.9) contrast(0.5); }
 
-/* Current playing column highlight */
-.px.now {
-  filter: brightness(1.6) contrast(0.6);
-  z-index: 2;
-}
-.px.bit.now {
-  filter: brightness(2) contrast(0.5);
-}
+/* Melody mode tint on active steps */
+.melody-active .px.step-on:not(.bit) { background: rgba(58,110,168,0.12); }
+.melody-active .px.bit.step-on { background: var(--on); }
 
-/* Track row borders - visual grouping every 5 rows */
-/* rows 4, 9, 14, 19, 24, 29, 34, 39 get a bottom border */
-/* We'll apply this via JS */
-.px.track-end {
-  border-bottom: 0.5px solid rgba(72,73,75,0.25);
-}
-
-/* Density & step active logic: cells that ARE active steps */
-.px.step-on {
-  outline: 1.5px solid var(--on);
-  outline-offset: -1px;
-  z-index: 1;
-}
-.px.bit.step-on {
-  /* bit=1 and step active - already dark, just a subtle inner highlight */
-  background: var(--on);
-}
-/* bit=0 but step active (below threshold) — muted step, show as dim */
-.px:not(.bit).step-on {
-  background: rgba(72,73,75,0.18);
-  outline: 1px solid rgba(72,73,75,0.35);
-}
-
-/* ── CONTROLS ── */
-.controls {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 8px;
-}
+/* ── CONTROLS ROW ── */
+.controls { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 
 /* ── TRANSPORT ── */
-.transport {
-  background: var(--card);
-  border: 1px solid var(--border);
-  padding: 12px;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
+.transport { background: var(--card); border: 1px solid var(--border); padding: 12px; display: flex; flex-direction: column; gap: 10px; }
 
 .play-btn {
-  background: var(--on);
-  border: none;
-  color: var(--off);
-  font-family: 'Space Mono', monospace;
-  font-size: 13px;
-  font-weight: 700;
-  letter-spacing: 0.15em;
-  padding: 14px;
-  cursor: pointer;
-  width: 100%;
-  transition: opacity .12s;
-  min-height: 48px;
-  -webkit-appearance: none;
-  border-radius: 0;
+  background: var(--on); border: none; color: var(--off);
+  font-family: 'Space Mono', monospace; font-size: 13px; font-weight: 700;
+  letter-spacing: .15em; padding: 14px; cursor: pointer; width: 100%;
+  transition: opacity .12s; min-height: 48px; -webkit-appearance: none; border-radius: 0;
 }
 .play-btn:active { opacity: .7; }
 .play-btn.playing {
-  background: var(--off);
-  color: var(--on);
-  border: 1.5px solid var(--on);
+  background: var(--off); color: var(--on); border: 1.5px solid var(--on);
   animation: blink .9s steps(1) infinite;
 }
 @keyframes blink { 0%,100%{opacity:1} 50%{opacity:.7} }
 
-.knob-row {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-.k-label {
-  font-size: 9px;
-  letter-spacing: 0.15em;
-  color: var(--text2);
-  white-space: nowrap;
-  min-width: 52px;
-}
-.k-val {
-  font-size: 12px;
-  color: var(--text);
-  min-width: 30px;
-  text-align: right;
-}
+.knob-row { display: flex; align-items: center; gap: 8px; }
+.k-label { font-size: 9px; letter-spacing: .15em; color: var(--text2); white-space: nowrap; min-width: 52px; }
+.k-val   { font-size: 12px; color: var(--text); min-width: 30px; text-align: right; }
 
 input[type=range] {
-  -webkit-appearance: none;
-  flex: 1;
-  height: 2px;
-  background: var(--border);
-  outline: none;
-  cursor: pointer;
-  border-radius: 0;
+  -webkit-appearance: none; flex: 1; height: 2px;
+  background: var(--border); outline: none; cursor: pointer; border-radius: 0;
 }
 input[type=range]::-webkit-slider-thumb {
-  -webkit-appearance: none;
-  width: 16px; height: 16px;
-  background: var(--on);
-  cursor: pointer;
-  border-radius: 0;
+  -webkit-appearance: none; width: 16px; height: 16px;
+  background: var(--on); cursor: pointer; border-radius: 0;
 }
 
-/* ── MODES ── */
-.modes-card {
-  background: var(--card);
-  border: 1px solid var(--border);
-  padding: 12px;
-}
-
-.mode-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 4px;
-}
+/* ── MODES CARD ── */
+.modes-card { background: var(--card); border: 1px solid var(--border); padding: 12px; }
+.mode-grid  { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; }
 
 .mode-btn {
-  background: var(--bg);
-  border: 1px solid var(--border);
-  color: var(--text2);
-  font-family: 'Space Mono', monospace;
-  font-size: 9px;
-  font-weight: 700;
-  letter-spacing: 0.1em;
-  padding: 10px 6px;
-  cursor: pointer;
-  text-align: center;
-  text-transform: uppercase;
-  line-height: 1.5;
-  transition: all .12s;
-  -webkit-appearance: none;
-  border-radius: 0;
-  min-height: 44px;
+  background: var(--bg); border: 1px solid var(--border);
+  color: var(--text2); font-family: 'Space Mono', monospace;
+  font-size: 8px; font-weight: 700; letter-spacing: .1em;
+  padding: 10px 6px; cursor: pointer; text-align: center; text-transform: uppercase;
+  line-height: 1.5; transition: all .12s; -webkit-appearance: none; border-radius: 0; min-height: 44px;
 }
 .mode-btn:active { opacity: .7; }
-.mode-btn.active {
-  background: var(--on);
-  color: var(--off);
-  border-color: var(--on);
+.mode-btn.active { background: var(--on); color: var(--off); border-color: var(--on); }
+.mode-btn.mel-active { background: var(--mel); color: #fff; border-color: var(--mel); }
+
+/* ── MELODY PANEL ── */
+.melody-panel {
+  background: var(--mel-bg);
+  border: 1px solid #b8cde6;
+  padding: 12px;
+  display: none;
+  flex-direction: column;
+  gap: 10px;
+}
+.melody-panel.visible { display: flex; }
+.melody-panel .card-label { color: var(--mel); }
+
+.sel-row { display: flex; gap: 6px; flex-wrap: wrap; }
+
+.mel-select {
+  flex: 1; min-width: 0;
+  background: #fff; border: 1px solid #b8cde6;
+  color: var(--mel); font-family: 'Space Mono', monospace;
+  font-size: 11px; padding: 8px 10px; outline: none;
+  -webkit-appearance: none; border-radius: 0; cursor: pointer;
+  min-height: 44px;
+}
+.mel-select:focus { border-color: var(--mel); }
+
+.mel-label-sm {
+  font-size: 9px; letter-spacing: .12em; color: var(--mel);
+  text-transform: uppercase; margin-bottom: 4px;
 }
 
-/* ── TRACK LEGEND ── */
-.legend {
-  display: grid;
-  grid-template-columns: repeat(8, 1fr);
-  gap: 2px;
-  margin-top: 6px;
-}
-.leg {
-  font-size: 7px;
-  letter-spacing: 0.05em;
-  color: var(--text2);
-  text-align: center;
-  padding: 3px 1px;
-  border-top: 2px solid var(--border);
-  text-transform: uppercase;
-}
-.leg.active-track { border-top-color: var(--on); color: var(--on); }
-
-/* ── STEP COUNTER ── */
-.step-info {
-  font-size: 9px;
-  letter-spacing: 0.1em;
-  color: var(--text2);
+.scale-notes-display {
+  font-size: 8px;
+  color: var(--mel);
+  letter-spacing: .1em;
+  margin-top: 2px;
+  opacity: 0.7;
 }
 
 /* ── FOOTER ── */
-.footer {
-  text-align: center;
-  font-size: 9px;
-  color: var(--text2);
-  padding: 8px;
-  letter-spacing: 0.1em;
-}
+.footer { text-align: center; font-size: 9px; color: var(--text2); padding: 8px; letter-spacing: .1em; }
 
-/* ── DESKTOP OVERRIDE (wider than 600px) ── */
 @media (min-width: 640px) {
   .app { padding: 20px; gap: 14px; }
   .controls { grid-template-columns: 200px 1fr; }
-  .header { padding: 14px 20px; }
 }
 </style>
 </head>
@@ -407,15 +268,15 @@ input[type=range]::-webkit-slider-thumb {
       <div class="card-label" style="margin:0" id="nftName">— no normie loaded —</div>
       <div class="step-info" id="stepInfo">——</div>
     </div>
-    <div class="pixel-grid" id="pixelGrid"></div>
-    <!-- Track labels below grid -->
-    <div class="legend" id="legend"></div>
+    <div class="grid-outer">
+      <div class="row-labels" id="rowLabels"></div>
+      <div class="pixel-grid" id="pixelGrid"></div>
+    </div>
   </div>
 
-  <!-- CONTROLS ROW -->
+  <!-- CONTROLS -->
   <div class="controls">
 
-    <!-- TRANSPORT -->
     <div class="transport">
       <div class="card-label">Transport</div>
       <button class="play-btn" id="playBtn" onclick="togglePlay()">▶ PLAY</button>
@@ -433,7 +294,6 @@ input[type=range]::-webkit-slider-thumb {
       </div>
     </div>
 
-    <!-- MODES -->
     <div class="modes-card">
       <div class="card-label">Sound Mode</div>
       <div class="mode-grid">
@@ -441,48 +301,173 @@ input[type=range]::-webkit-slider-thumb {
         <button class="mode-btn"        id="mode-techno"     onclick="setMode('techno')">TECHNO<br>MINIMAL</button>
         <button class="mode-btn"        id="mode-jungle"     onclick="setMode('jungle')">JUNGLE<br>BREAK</button>
         <button class="mode-btn"        id="mode-industrial" onclick="setMode('industrial')">INDU<br>NOISE</button>
+        <button class="mode-btn"        id="mode-melody"     onclick="setMode('melody')" style="grid-column:span 2">♩ MELODY MAKER</button>
       </div>
     </div>
 
   </div>
 
-  <div class="footer">NORMIES SEQUENCER · PIXEL DRUM MACHINE · api.normies.art</div>
+  <!-- MELODY PANEL -->
+  <div class="melody-panel" id="melodyPanel">
+    <div class="card-label">Melody Configuration</div>
+
+    <div>
+      <div class="mel-label-sm">Scale</div>
+      <div class="sel-row">
+        <select class="mel-select" id="scaleSelect" onchange="updateMelody()">
+          <option value="major">Major</option>
+          <option value="minor">Natural Minor</option>
+          <option value="pentatonic">Pentatonic Major</option>
+          <option value="pentatonic_minor">Pentatonic Minor</option>
+          <option value="dorian">Dorian</option>
+          <option value="phrygian">Phrygian</option>
+          <option value="lydian">Lydian</option>
+          <option value="mixolydian">Mixolydian</option>
+          <option value="blues">Blues</option>
+          <option value="whole_tone">Whole Tone</option>
+          <option value="chromatic">Chromatic</option>
+        </select>
+        <select class="mel-select" id="rootSelect" onchange="updateMelody()" style="max-width:80px">
+          <option>C</option><option>C#</option><option>D</option>
+          <option>D#</option><option>E</option><option>F</option>
+          <option>F#</option><option>G</option><option>G#</option>
+          <option>A</option><option>A#</option><option>B</option>
+        </select>
+        <select class="mel-select" id="octaveSelect" onchange="updateMelody()" style="max-width:70px">
+          <option value="3">OCT 3</option>
+          <option value="4" selected>OCT 4</option>
+          <option value="5">OCT 5</option>
+        </select>
+      </div>
+      <div class="scale-notes-display" id="scaleNotesDisplay"></div>
+    </div>
+
+    <div>
+      <div class="mel-label-sm">Instrument</div>
+      <div class="sel-row">
+        <select class="mel-select" id="melInstrument" onchange="updateMelodyInstrument()">
+          <option value="sine">Sine — Soft</option>
+          <option value="triangle">Triangle — Warm</option>
+          <option value="sawtooth" selected>Sawtooth — Bright</option>
+          <option value="square">Square — Hollow</option>
+          <option value="fmbell">FM Bell</option>
+          <option value="pluck">Pluck</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="knob-row">
+      <span class="k-label" style="color:var(--mel)">SUSTAIN</span>
+      <input type="range" min="0" max="100" value="30" style="accent-color:var(--mel)"
+        oninput="melSustain=+this.value/100; document.getElementById('susVal').textContent=this.value+'%'" />
+      <span class="k-val" id="susVal" style="color:var(--mel)">30%</span>
+    </div>
+  </div>
+
+  <div class="footer">NORMIES SEQUENCER · api.normies.art</div>
 </div>
 
 <script>
-// ══════════════════════════════════════════════════
+// ══════════════════════════════════════
 // STATE
-// ══════════════════════════════════════════════════
+// ══════════════════════════════════════
 const STEPS = 40, TRACKS = 8;
-let bits       = null;      // Uint8Array(1600) — pixel data
-let active     = Array.from({length:TRACKS}, () => new Uint8Array(STEPS)); // which steps fire
+let bits       = null;
+let active     = Array.from({length:TRACKS}, () => new Uint8Array(STEPS));
 let density    = 2;
 let currentCol = -1;
 let isPlaying  = false;
 let currentMode= 'trap';
-let seq = null;
+let seq        = null;
+let melSustain = 0.3;
 
-// ══════════════════════════════════════════════════
-// TRACK NAMES
-// ══════════════════════════════════════════════════
-const MODES = {
+// ══════════════════════════════════════
+// TRACK / MODE CONFIG
+// ══════════════════════════════════════
+const DRUM_MODES = {
   trap:       ['KICK','SNAP','CH','OH','808','CLAP','PERC','CRSH'],
   techno:     ['KICK','CLAP','CH','OH','BASS','MID','HI','RIDE'],
   jungle:     ['KICK','SNARE','CH','OH','BREK','BASS','STAB','CYM'],
   industrial: ['KICK','METL','NSE1','NSE2','SUB','CLNG','GRND','FBK'],
 };
 
-// ══════════════════════════════════════════════════
+// ══════════════════════════════════════
+// SCALES
+// ══════════════════════════════════════
+const SCALE_INTERVALS = {
+  major:           [0,2,4,5,7,9,11,12],
+  minor:           [0,2,3,5,7,8,10,12],
+  pentatonic:      [0,2,4,7,9,12,14,16],
+  pentatonic_minor:[0,3,5,7,10,12,15,17],
+  dorian:          [0,2,3,5,7,9,10,12],
+  phrygian:        [0,1,3,5,7,8,10,12],
+  lydian:          [0,2,4,6,7,9,11,12],
+  mixolydian:      [0,2,4,5,7,9,10,12],
+  blues:           [0,3,5,6,7,10,12,15],
+  whole_tone:      [0,2,4,6,8,10,12,14],
+  chromatic:       [0,1,2,3,4,5,6,7],
+};
+
+const CHROMATIC_NOTES = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
+
+function getMelodyNotes() {
+  const root    = document.getElementById('rootSelect').value;
+  const scale   = document.getElementById('scaleSelect').value;
+  const octave  = parseInt(document.getElementById('octaveSelect').value);
+  const rootIdx = CHROMATIC_NOTES.indexOf(root);
+  const intervals = SCALE_INTERVALS[scale];
+  // Track 0 = lowest note, track 7 = highest
+  return intervals.map(interval => {
+    const noteIdx = (rootIdx + interval) % 12;
+    const oct = octave + Math.floor((rootIdx + interval) / 12);
+    return CHROMATIC_NOTES[noteIdx] + oct;
+  });
+}
+
+function updateMelody() {
+  const notes = getMelodyNotes();
+  document.getElementById('scaleNotesDisplay').textContent = notes.join('  ');
+  buildRowLabels();
+  if (isPlaying && currentMode === 'melody') buildSynths('melody');
+}
+
+function updateMelodyInstrument() {
+  if (currentMode === 'melody' && isPlaying) buildSynths('melody');
+}
+
+// ══════════════════════════════════════
 // TONE.JS AUDIO
-// ══════════════════════════════════════════════════
+// ══════════════════════════════════════
 const lim = new Tone.Limiter(-2).toDestination();
-const rvb = new Tone.Reverb({ decay:1.0, wet:0.11 }).connect(lim);
-const dly = new Tone.FeedbackDelay('16n', 0.08).connect(rvb);
+const rvb = new Tone.Reverb({ decay: 1.2, wet: 0.13 }).connect(lim);
+const dly = new Tone.FeedbackDelay('16n', 0.07).connect(rvb);
 let S = {};
+let melSynth = null;
 
 function buildSynths(mode) {
   Object.values(S).forEach(s => { try { s.dispose(); } catch(e){} });
   S = {};
+  if (melSynth) { try { melSynth.dispose(); } catch(e){} melSynth = null; }
+
+  if (mode === 'melody') {
+    const inst = document.getElementById('melInstrument').value;
+    if (inst === 'fmbell') {
+      melSynth = new Tone.PolySynth(Tone.FMSynth, {
+        harmonicity: 3, modulationIndex: 10,
+        envelope: { attack:.001, decay:.3, sustain:melSustain, release:.8 },
+        modulation: { type: 'sine' },
+        modulationEnvelope: { attack:.002, decay:.2, sustain:0.1, release:.5 }
+      }).connect(rvb);
+    } else if (inst === 'pluck') {
+      melSynth = new Tone.PolySynth(Tone.PluckSynth).connect(rvb);
+    } else {
+      melSynth = new Tone.PolySynth(Tone.Synth, {
+        oscillator: { type: inst },
+        envelope: { attack:.005, decay:.2, sustain:melSustain, release:.4 }
+      }).connect(rvb);
+    }
+    return;
+  }
 
   if (mode === 'trap') {
     S[0] = new Tone.MembraneSynth({pitchDecay:.08,octaves:8,envelope:{attack:.001,decay:.45,sustain:0}}).connect(lim);
@@ -523,16 +508,16 @@ function buildSynths(mode) {
   }
 }
 
-const NOTES = {
+const DRUM_NOTES = {
   trap:       ['C1','C2',null,null,'C2','D2','G3','A4'],
   techno:     ['C1','D2',null,null,'C2','C4',null,'G#4'],
   jungle:     ['C1','D2',null,null,'C2','C3','C5','C4'],
   industrial: ['C0','G1',null,null,'C1','C2',null,'A5'],
 };
 
-function trigger(t, time) {
+function triggerDrum(t, time) {
   if (!S[t]) return;
-  const note = NOTES[currentMode][t];
+  const note = DRUM_NOTES[currentMode][t];
   try {
     if (!note || S[t] instanceof Tone.NoiseSynth) {
       S[t].triggerAttackRelease(0.1, time);
@@ -542,15 +527,32 @@ function trigger(t, time) {
   } catch(e) { try { S[t].triggerAttackRelease(0.1, time); } catch(e2){} }
 }
 
-// ══════════════════════════════════════════════════
-// SEQUENCER ENGINE
-// ══════════════════════════════════════════════════
+function triggerMelody(col, time) {
+  if (!melSynth) return;
+  const notes = getMelodyNotes();
+  const toPlay = [];
+  for (let t = 0; t < TRACKS; t++) {
+    if (active[t][col] && notes[t]) toPlay.push(notes[t]);
+  }
+  if (toPlay.length === 0) return;
+  try {
+    melSynth.triggerAttackRelease(toPlay, '8n', time);
+  } catch(e) {}
+}
+
+// ══════════════════════════════════════
+// SEQUENCER
+// ══════════════════════════════════════
 function startSeq() {
   if (seq) { seq.stop(); seq.dispose(); seq = null; }
   seq = new Tone.Sequence((time, step) => {
     currentCol = step;
-    for (let t = 0; t < TRACKS; t++) {
-      if (active[t][step]) trigger(t, time);
+    if (currentMode === 'melody') {
+      triggerMelody(step, time);
+    } else {
+      for (let t = 0; t < TRACKS; t++) {
+        if (active[t][step]) triggerDrum(t, time);
+      }
     }
     Tone.getDraw().schedule(() => tickUI(step), time);
   }, [...Array(STEPS).keys()], '16n');
@@ -568,18 +570,23 @@ function stopSeq() {
 
 function tickUI(col) {
   clearPlayhead();
-  // Highlight every cell in the current column
   for (let row = 0; row < 40; row++) {
-    const cell = getCellEl(row, col);
+    const cell = cellEls[row] && cellEls[row][col];
     if (cell) cell.classList.add('now');
   }
-  // Count active tracks this step
+
   const hits = Array.from({length:TRACKS}, (_,t) => active[t][col]).filter(Boolean).length;
   document.getElementById('stepInfo').textContent = `COL ${String(col+1).padStart(2,'0')} · ${hits} HIT${hits!==1?'S':''}`;
 
-  // Highlight active tracks in legend
-  document.querySelectorAll('.leg').forEach((el, t) => {
-    el.classList.toggle('active-track', !!active[t][col]);
+  // Highlight row labels for active tracks
+  document.querySelectorAll('.row-label').forEach((el, t) => {
+    if (currentMode === 'melody') {
+      el.classList.toggle('mel-label', !!active[t][col]);
+      el.classList.remove('hit');
+    } else {
+      el.classList.toggle('hit', !!active[t][col]);
+      el.classList.remove('mel-label');
+    }
   });
 }
 
@@ -587,9 +594,9 @@ function clearPlayhead() {
   document.querySelectorAll('.px.now').forEach(el => el.classList.remove('now'));
 }
 
-// ══════════════════════════════════════════════════
-// PIXEL DATA → ACTIVE STEPS
-// ══════════════════════════════════════════════════
+// ══════════════════════════════════════
+// PIXEL → ACTIVE
+// ══════════════════════════════════════
 function bitsToActive() {
   if (!bits) return;
   for (let t = 0; t < TRACKS; t++) {
@@ -601,39 +608,28 @@ function bitsToActive() {
   }
 }
 
-function rebuildActive() {
-  bitsToActive();
-  refreshActiveClass();
-}
+function rebuildActive() { bitsToActive(); refreshActiveClass(); }
 
-// ══════════════════════════════════════════════════
-// API FETCH
-// ══════════════════════════════════════════════════
-// ── FETCH WITH PROXY FALLBACK ──────────────────────
+// ══════════════════════════════════════
+// API
+// ══════════════════════════════════════
 const API = 'https://api.normies.art';
 
 async function apiFetch(path) {
   const url = API + path;
-
-  // 1) Direct
   try {
     const r = await fetch(url, { signal: AbortSignal.timeout(6000) });
     if (r.ok) return r.text();
   } catch(e) {}
-
-  // 2) allorigins
   try {
     const r = await fetch('https://api.allorigins.win/get?url=' + encodeURIComponent(url), { signal: AbortSignal.timeout(10000) });
     if (r.ok) { const j = await r.json(); return j.contents; }
   } catch(e) {}
-
-  // 3) corsproxy.io
   try {
     const r = await fetch('https://corsproxy.io/?' + encodeURIComponent(url), { signal: AbortSignal.timeout(10000) });
     if (r.ok) return r.text();
   } catch(e) {}
-
-  throw new Error('Network blocked — try hosting on a web server or open via http://');
+  throw new Error('Network blocked — deploy to Vercel/Netlify to fix');
 }
 
 async function loadNormie() {
@@ -659,7 +655,6 @@ async function loadNormie() {
     const stepCount = active.reduce((s,row)=>s+row.reduce((a,b)=>a+b,0),0);
     st('loadStatus',`#${id} loaded · ${onCount} pixels on · ${stepCount} active steps`,'ok');
     document.getElementById('headerInfo').textContent = `NORMIE #${id}`;
-
   } catch(e) {
     st('loadStatus', e.message, 'err');
   }
@@ -674,51 +669,35 @@ async function fetchName(id) {
   } catch(e) { document.getElementById('nftName').textContent = `Normie #${id}`; }
 }
 
-// ══════════════════════════════════════════════════
-// RENDER GRID
-// ══════════════════════════════════════════════════
-let cellEls = []; // [row][col]
+// ══════════════════════════════════════
+// GRID RENDERING
+// ══════════════════════════════════════
+let cellEls = [];
 
 function buildGrid() {
   const grid = document.getElementById('pixelGrid');
   grid.innerHTML = '';
   cellEls = [];
-
   for (let row = 0; row < 40; row++) {
     cellEls[row] = [];
     for (let col = 0; col < 40; col++) {
       const cell = document.createElement('div');
       cell.className = 'px';
-      cell.dataset.row = row;
-      cell.dataset.col = col;
-
-      // Track end visual separator
       if ((row + 1) % 5 === 0 && row < 39) cell.classList.add('track-end');
-
       cellEls[row][col] = cell;
       grid.appendChild(cell);
     }
   }
 }
 
-function getCellEl(row, col) {
-  return cellEls[row] && cellEls[row][col];
-}
-
 function renderGrid() {
   if (!bits) return;
-
   for (let row = 0; row < 40; row++) {
     const track = Math.floor(row / 5);
     for (let col = 0; col < 40; col++) {
-      const cell = getCellEl(row, col);
-      if (!cell) continue;
-
-      const isBit = bits[row * 40 + col] === 1;
-      const isActive = active[track][col] === 1;
-
-      cell.classList.toggle('bit', isBit);
-      cell.classList.toggle('step-on', isActive);
+      const cell = cellEls[row][col];
+      cell.classList.toggle('bit', bits[row * 40 + col] === 1);
+      cell.classList.toggle('step-on', active[track][col] === 1);
     }
   }
 }
@@ -727,43 +706,59 @@ function refreshActiveClass() {
   for (let row = 0; row < 40; row++) {
     const track = Math.floor(row / 5);
     for (let col = 0; col < 40; col++) {
-      const cell = getCellEl(row, col);
-      if (!cell) continue;
-      cell.classList.toggle('step-on', active[track][col] === 1);
+      cellEls[row][col].classList.toggle('step-on', active[track][col] === 1);
     }
   }
 }
 
-// ══════════════════════════════════════════════════
-// LEGEND
-// ══════════════════════════════════════════════════
-function buildLegend() {
-  const legend = document.getElementById('legend');
-  legend.innerHTML = '';
-  const names = MODES[currentMode];
+// ══════════════════════════════════════
+// ROW LABELS
+// ══════════════════════════════════════
+function buildRowLabels() {
+  const container = document.getElementById('rowLabels');
+  container.innerHTML = '';
+
+  const isMelody = currentMode === 'melody';
+  const names = isMelody ? getMelodyNotes() : DRUM_MODES[currentMode];
+
   for (let t = 0; t < TRACKS; t++) {
     const el = document.createElement('div');
-    el.className = 'leg';
+    el.className = 'row-label';
     el.textContent = names[t];
-    legend.appendChild(el);
+    container.appendChild(el);
   }
+
+  // Sync height to the pixel grid
+  syncLabelHeight();
 }
 
-// ══════════════════════════════════════════════════
+function syncLabelHeight() {
+  const grid = document.getElementById('pixelGrid');
+  const labels = document.getElementById('rowLabels');
+  // Use ResizeObserver to keep in sync
+  if (window._labelObserver) window._labelObserver.disconnect();
+  window._labelObserver = new ResizeObserver(() => {
+    labels.style.height = grid.offsetWidth + 'px'; // grid is square
+  });
+  window._labelObserver.observe(grid);
+  labels.style.height = grid.offsetWidth + 'px';
+}
+
+// ══════════════════════════════════════
 // CONTROLS
-// ══════════════════════════════════════════════════
+// ══════════════════════════════════════
 async function togglePlay() {
   await Tone.start();
   if (!isPlaying) {
     buildSynths(currentMode);
     startSeq();
     isPlaying = true;
-    document.getElementById('playBtn').textContent = '■  STOP';
+    document.getElementById('playBtn').textContent = '■ STOP';
     document.getElementById('playBtn').classList.add('playing');
   } else {
     stopSeq();
     isPlaying = false;
-    document.getElementById('playBtn').textContent = '▶  PLAY';
+    document.getElementById('playBtn').textContent = '▶ PLAY';
     document.getElementById('playBtn').classList.remove('playing');
   }
 }
@@ -772,9 +767,28 @@ function setBPM(v) { Tone.getTransport().bpm.value = v; }
 
 function setMode(mode) {
   currentMode = mode;
-  document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
-  document.getElementById(`mode-${mode}`).classList.add('active');
-  buildLegend();
+  document.querySelectorAll('.mode-btn').forEach(b => {
+    b.classList.remove('active','mel-active');
+  });
+  const btn = document.getElementById(`mode-${mode}`);
+  if (mode === 'melody') {
+    btn.classList.add('mel-active');
+  } else {
+    btn.classList.add('active');
+  }
+
+  // Show/hide melody panel
+  const panel = document.getElementById('melodyPanel');
+  if (mode === 'melody') {
+    panel.classList.add('visible');
+    document.getElementById('pixelGrid').classList.add('melody-active');
+    updateMelody();
+  } else {
+    panel.classList.remove('visible');
+    document.getElementById('pixelGrid').classList.remove('melody-active');
+  }
+
+  buildRowLabels();
   if (isPlaying) buildSynths(mode);
 }
 
@@ -784,13 +798,14 @@ function st(id, msg, type) {
   el.className = 'status ' + (type||'');
 }
 
-// ══════════════════════════════════════════════════
+// ══════════════════════════════════════
 // INIT
-// ══════════════════════════════════════════════════
+// ══════════════════════════════════════
 function init() {
   buildGrid();
-  buildLegend();
+  buildRowLabels();
   setBPM(120);
+  updateMelody(); // populate scale notes display
 }
 
 init();
