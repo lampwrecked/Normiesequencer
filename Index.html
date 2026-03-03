@@ -1,0 +1,975 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>NORMIES SEQUENCER</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.7.77/Tone.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap');
+
+:root {
+  --on:     #48494b;
+  --off:    #e3e5e4;
+  --bg:     #f0f1f0;
+  --card:   #ffffff;
+  --border: #d0d2d0;
+  --text:   #48494b;
+  --text2:  #9a9b9a;
+  --mel:    #3a6ea8;
+  --mel-bg: #eef3fa;
+  --mel-border: #b8cde6;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+html, body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Space Mono', monospace;
+  min-height: 100dvh;
+  font-size: 12px;
+}
+
+.header {
+  background: var(--card);
+  border-bottom: 1px solid var(--border);
+  padding: 12px 16px;
+  display: flex; align-items: center; justify-content: space-between;
+  position: sticky; top: 0; z-index: 100;
+}
+.logo { font-size: 13px; font-weight: 700; letter-spacing: .12em; color: var(--on); }
+.logo span { color: var(--text2); font-weight: 400; }
+.header-info { font-size: 10px; color: var(--text2); letter-spacing: .08em; }
+
+.app { max-width: 600px; margin: 0 auto; padding: 12px; display: flex; flex-direction: column; gap: 10px; }
+
+.card { background: var(--card); border: 1px solid var(--border); padding: 12px; }
+.card-label { font-size: 9px; letter-spacing: .18em; color: var(--text2); text-transform: uppercase; margin-bottom: 8px; }
+
+/* LOAD */
+.load-row { display: flex; gap: 6px; align-items: center; }
+.id-input {
+  flex: 1; background: var(--bg); border: 1px solid var(--border);
+  color: var(--text); font-family: 'Space Mono', monospace; font-size: 16px;
+  padding: 9px 11px; outline: none; transition: border-color .15s;
+  -webkit-appearance: none; border-radius: 0;
+}
+.id-input:focus { border-color: var(--on); }
+.id-input::placeholder { color: var(--border); }
+.load-btn {
+  background: var(--on); border: none; color: var(--off);
+  font-family: 'Space Mono', monospace; font-size: 11px; font-weight: 700;
+  letter-spacing: .1em; padding: 9px 14px; cursor: pointer;
+  transition: opacity .12s; white-space: nowrap; border-radius: 0;
+  -webkit-appearance: none; min-height: 44px;
+}
+.load-btn:active { opacity: .7; }
+.load-btn:disabled { opacity: .3; cursor: not-allowed; }
+.status { font-size: 9px; letter-spacing: .08em; color: var(--text2); margin-top: 6px; min-height: 13px; }
+.status.ok     { color: #3a8a4a; }
+.status.err    { color: #c04040; }
+.status.loading{ color: var(--text2); }
+
+/* GRID SECTION */
+.grid-wrap { background: var(--card); border: 1px solid var(--border); padding: 8px; }
+.grid-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+.step-info { font-size: 9px; letter-spacing: .1em; color: var(--text2); }
+
+/* Side-by-side: labels + grid */
+.grid-outer { display: flex; align-items: stretch; }
+
+/* 8 track labels stacked, each occupying 1/8 of the grid height */
+.row-labels {
+  width: 36px;
+  flex-shrink: 0;
+  display: grid;
+  grid-template-rows: repeat(8, 1fr);
+  margin-right: 0;
+}
+.row-label {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding-right: 5px;
+  font-size: 6.5px;
+  font-weight: 700;
+  letter-spacing: .05em;
+  color: var(--text2);
+  text-transform: uppercase;
+  border-right: 2px solid var(--border);
+  line-height: 1;
+  transition: color .1s, border-color .1s;
+  overflow: hidden;
+}
+.row-label.hit { color: var(--on); border-right-color: var(--on); }
+.row-label.mel-hit { color: var(--mel); border-right-color: var(--mel); }
+
+/* The pixel grid — takes remaining width, forced square */
+.pixel-grid-container {
+  flex: 1;
+  /* Force square based on own width */
+  aspect-ratio: 1 / 1;
+}
+.pixel-grid {
+  width: 100%;
+  height: 100%;
+  display: grid;
+  grid-template-columns: repeat(40, 1fr);
+  grid-template-rows: repeat(40, 1fr);
+  background: var(--border);
+}
+
+.px {
+  background: var(--off);
+  transition: background .04s;
+}
+.px.bit { background: var(--on); }
+.px.track-end { border-bottom: 1px solid rgba(72,73,75,0.2); }
+.px.step-on:not(.bit) { background: rgba(72,73,75,0.12); }
+.px.now { filter: brightness(1.55) contrast(0.65); z-index: 2; }
+.px.bit.now { filter: brightness(1.9) contrast(0.5); }
+
+/* Melody tint */
+.mel-mode .px.step-on:not(.bit) { background: rgba(58,110,168,0.1); }
+
+/* CONTROLS */
+.controls { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+
+.transport { background: var(--card); border: 1px solid var(--border); padding: 12px; display: flex; flex-direction: column; gap: 10px; }
+
+.play-btn {
+  background: var(--on); border: none; color: var(--off);
+  font-family: 'Space Mono', monospace; font-size: 13px; font-weight: 700;
+  letter-spacing: .15em; padding: 14px; cursor: pointer; width: 100%;
+  min-height: 48px; -webkit-appearance: none; border-radius: 0; transition: opacity .12s;
+}
+.play-btn:active { opacity: .7; }
+.play-btn.playing {
+  background: var(--off); color: var(--on); border: 1.5px solid var(--on);
+  animation: blink .9s steps(1) infinite;
+}
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:.65} }
+
+.knob-row { display: flex; align-items: center; gap: 8px; }
+.k-label { font-size: 9px; letter-spacing: .15em; color: var(--text2); white-space: nowrap; min-width: 52px; }
+.k-val   { font-size: 12px; color: var(--text); min-width: 34px; text-align: right; }
+
+input[type=range] {
+  -webkit-appearance: none; flex: 1; height: 2px;
+  background: var(--border); outline: none; cursor: pointer; border-radius: 0;
+}
+input[type=range]::-webkit-slider-thumb {
+  -webkit-appearance: none; width: 16px; height: 16px;
+  background: var(--on); cursor: pointer; border-radius: 0;
+}
+
+.modes-card { background: var(--card); border: 1px solid var(--border); padding: 12px; }
+.mode-grid  { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; }
+
+.mode-btn {
+  background: var(--bg); border: 1px solid var(--border);
+  color: var(--text2); font-family: 'Space Mono', monospace;
+  font-size: 8px; font-weight: 700; letter-spacing: .1em;
+  padding: 10px 6px; cursor: pointer; text-align: center; text-transform: uppercase;
+  line-height: 1.5; transition: all .12s; -webkit-appearance: none; border-radius: 0; min-height: 44px;
+}
+.mode-btn:active { opacity: .7; }
+.mode-btn.active { background: var(--on); color: var(--off); border-color: var(--on); }
+.mode-btn.mel-active { background: var(--mel); color: #fff; border-color: var(--mel); }
+
+/* MELODY PANEL */
+.melody-panel {
+  background: var(--mel-bg); border: 1px solid var(--mel-border);
+  padding: 12px; display: none; flex-direction: column; gap: 10px;
+}
+.melody-panel.visible { display: flex; }
+.melody-panel .card-label { color: var(--mel); }
+.mel-label-sm { font-size: 9px; letter-spacing: .12em; color: var(--mel); text-transform: uppercase; margin-bottom: 4px; }
+.scale-notes  { font-size: 8px; color: var(--mel); opacity: .65; letter-spacing: .08em; margin-top: 3px; }
+
+.sel-row { display: flex; gap: 6px; flex-wrap: wrap; }
+.mel-select {
+  flex: 1; min-width: 0; background: #fff; border: 1px solid var(--mel-border);
+  color: var(--mel); font-family: 'Space Mono', monospace; font-size: 11px;
+  padding: 8px 10px; outline: none; -webkit-appearance: none; border-radius: 0;
+  cursor: pointer; min-height: 44px;
+}
+.mel-select:focus { border-color: var(--mel); }
+
+/* VIDEO EXPORT PANEL */
+.export-panel { background: var(--card); border: 1px solid var(--border); padding: 12px; display: flex; flex-direction: column; gap: 10px; }
+
+.export-btn {
+  background: transparent; border: 1px solid var(--on);
+  color: var(--on); font-family: 'Space Mono', monospace;
+  font-size: 10px; font-weight: 700; letter-spacing: .12em;
+  padding: 12px; cursor: pointer; width: 100%; text-align: center;
+  transition: all .12s; -webkit-appearance: none; border-radius: 0; min-height: 44px;
+}
+.export-btn:hover { background: var(--on); color: var(--off); }
+.export-btn:active { opacity: .7; }
+.export-btn:disabled { opacity: .3; cursor: not-allowed; }
+.export-btn.recording {
+  background: #c04040; color: #fff; border-color: #c04040;
+  animation: blink .6s steps(1) infinite;
+}
+
+.export-progress { font-size: 9px; color: var(--text2); letter-spacing: .08em; min-height: 13px; }
+.progress-bar-wrap { background: var(--border); height: 3px; width: 100%; display: none; }
+.progress-bar-wrap.visible { display: block; }
+.progress-bar { height: 3px; background: var(--on); width: 0%; transition: width .3s linear; }
+
+.footer { text-align: center; font-size: 9px; color: var(--text2); padding: 8px; letter-spacing: .1em; }
+
+/* Hidden recording canvas */
+#recCanvas { display: none; }
+
+@media (min-width: 640px) {
+  .app { padding: 20px; gap: 14px; }
+  .controls { grid-template-columns: 200px 1fr; }
+}
+</style>
+</head>
+<body>
+
+<canvas id="recCanvas" width="1080" height="1080"></canvas>
+
+<div class="header">
+  <div class="logo">NORMIES<span> / SEQ</span></div>
+  <div class="header-info" id="headerInfo">40×40 PIXEL DRUM</div>
+</div>
+
+<div class="app">
+
+  <!-- LOAD -->
+  <div class="card">
+    <div class="card-label">Load Normie</div>
+    <div class="load-row">
+      <input class="id-input" id="nftId" type="number" min="0" max="9999" placeholder="0 – 9999" inputmode="numeric" />
+      <button class="load-btn" id="loadBtn" onclick="loadNormie()">LOAD</button>
+    </div>
+    <div class="status" id="loadStatus">Enter a token ID to begin</div>
+  </div>
+
+  <!-- GRID -->
+  <div class="grid-wrap">
+    <div class="grid-header">
+      <div class="card-label" style="margin:0" id="nftName">— no normie loaded —</div>
+      <div class="step-info" id="stepInfo">——</div>
+    </div>
+    <div class="grid-outer">
+      <div class="row-labels" id="rowLabels"></div>
+      <div class="pixel-grid-container">
+        <div class="pixel-grid" id="pixelGrid"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CONTROLS -->
+  <div class="controls">
+    <div class="transport">
+      <div class="card-label">Transport</div>
+      <button class="play-btn" id="playBtn" onclick="togglePlay()">▶ PLAY</button>
+      <div class="knob-row">
+        <span class="k-label">BPM</span>
+        <input type="range" id="bpmRange" min="40" max="250" value="120"
+          oninput="setBPM(+this.value); document.getElementById('bpmVal').textContent=this.value" />
+        <span class="k-val" id="bpmVal">120</span>
+      </div>
+      <div class="knob-row">
+        <span class="k-label">DENSITY</span>
+        <input type="range" min="1" max="5" value="2"
+          oninput="density=+this.value; document.getElementById('densVal').textContent=this.value; rebuildActive()" />
+        <span class="k-val" id="densVal">2</span>
+      </div>
+    </div>
+
+    <div class="modes-card">
+      <div class="card-label">Sound Mode</div>
+      <div class="mode-grid">
+        <button class="mode-btn active" id="mode-trap"       onclick="setMode('trap')">TRAP<br>808</button>
+        <button class="mode-btn"        id="mode-techno"     onclick="setMode('techno')">TECHNO<br>MINIMAL</button>
+        <button class="mode-btn"        id="mode-jungle"     onclick="setMode('jungle')">JUNGLE<br>BREAK</button>
+        <button class="mode-btn"        id="mode-industrial" onclick="setMode('industrial')">INDU<br>NOISE</button>
+        <button class="mode-btn"        id="mode-melody"     onclick="setMode('melody')" style="grid-column:span 2">♩ MELODY MAKER</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MELODY PANEL -->
+  <div class="melody-panel" id="melodyPanel">
+    <div class="card-label">Melody Configuration</div>
+    <div>
+      <div class="mel-label-sm">Scale &amp; Root</div>
+      <div class="sel-row">
+        <select class="mel-select" id="scaleSelect" onchange="updateMelody()">
+          <option value="major">Major</option>
+          <option value="minor">Natural Minor</option>
+          <option value="pentatonic">Pentatonic Major</option>
+          <option value="pentatonic_minor">Pentatonic Minor</option>
+          <option value="dorian">Dorian</option>
+          <option value="phrygian">Phrygian</option>
+          <option value="lydian">Lydian</option>
+          <option value="mixolydian">Mixolydian</option>
+          <option value="blues">Blues</option>
+          <option value="whole_tone">Whole Tone</option>
+          <option value="chromatic">Chromatic</option>
+        </select>
+        <select class="mel-select" id="rootSelect" onchange="updateMelody()" style="max-width:76px">
+          <option>C</option><option>C#</option><option>D</option><option>D#</option>
+          <option>E</option><option>F</option><option>F#</option><option>G</option>
+          <option>G#</option><option>A</option><option>A#</option><option>B</option>
+        </select>
+        <select class="mel-select" id="octaveSelect" onchange="updateMelody()" style="max-width:74px">
+          <option value="3">OCT 3</option>
+          <option value="4" selected>OCT 4</option>
+          <option value="5">OCT 5</option>
+        </select>
+      </div>
+      <div class="scale-notes" id="scaleNotesDisplay"></div>
+    </div>
+    <div>
+      <div class="mel-label-sm">Instrument</div>
+      <div class="sel-row">
+        <select class="mel-select" id="melInstrument" onchange="rebuildMelSynth()">
+          <option value="sine">Sine — Soft</option>
+          <option value="triangle">Triangle — Warm</option>
+          <option value="sawtooth" selected>Sawtooth — Bright</option>
+          <option value="square">Square — Hollow</option>
+          <option value="fmbell">FM Bell</option>
+          <option value="pluck">Pluck</option>
+        </select>
+      </div>
+    </div>
+    <div class="knob-row">
+      <span class="k-label" style="color:var(--mel)">SUSTAIN</span>
+      <input type="range" min="0" max="100" value="30"
+        oninput="melSustain=+this.value/100; document.getElementById('susVal').textContent=this.value+'%'; rebuildMelSynth()" />
+      <span class="k-val" id="susVal" style="color:var(--mel)">30%</span>
+    </div>
+  </div>
+
+  <!-- VIDEO EXPORT -->
+  <div class="export-panel">
+    <div class="card-label">Export</div>
+    <button class="export-btn" id="exportBtn" onclick="startExport()">⬇ RECORD 30s LOOP · 1080×1080</button>
+    <div class="export-progress" id="exportStatus"></div>
+    <div class="progress-bar-wrap" id="progressWrap">
+      <div class="progress-bar" id="progressBar"></div>
+    </div>
+    <div style="font-size:8px;color:var(--text2);letter-spacing:.06em">
+      Exports WebM video with audio. Load a Normie and hit Play first.
+    </div>
+  </div>
+
+  <div class="footer">NORMIES SEQUENCER · api.normies.art</div>
+</div>
+
+<script>
+// ════════════════════════════════════════
+// STATE
+// ════════════════════════════════════════
+const STEPS = 40, TRACKS = 8;
+let bits       = null;
+let active     = Array.from({length:TRACKS}, () => new Uint8Array(STEPS));
+let density    = 2;
+let currentCol = -1;
+let isPlaying  = false;
+let currentMode= 'trap';
+let seq        = null;
+let melSustain = 0.3;
+let melSynth   = null;
+let normieId   = null;
+
+// ════════════════════════════════════════
+// TRACK NAMES PER MODE
+// ════════════════════════════════════════
+const DRUM_MODES = {
+  trap:       ['KICK','SNAP','CH','OH','808','CLAP','PERC','CRSH'],
+  techno:     ['KICK','CLAP','CH','OH','BASS','MID','HI','RIDE'],
+  jungle:     ['KICK','SNARE','CH','OH','BREK','BASS','STAB','CYM'],
+  industrial: ['KICK','METL','NSE1','NSE2','SUB','CLNG','GRND','FBK'],
+};
+
+// ════════════════════════════════════════
+// SCALES
+// ════════════════════════════════════════
+const SCALES = {
+  major:           [0,2,4,5,7,9,11,12],
+  minor:           [0,2,3,5,7,8,10,12],
+  pentatonic:      [0,2,4,7,9,12,14,16],
+  pentatonic_minor:[0,3,5,7,10,12,15,17],
+  dorian:          [0,2,3,5,7,9,10,12],
+  phrygian:        [0,1,3,5,7,8,10,12],
+  lydian:          [0,2,4,6,7,9,11,12],
+  mixolydian:      [0,2,4,5,7,9,10,12],
+  blues:           [0,3,5,6,7,10,12,15],
+  whole_tone:      [0,2,4,6,8,10,12,14],
+  chromatic:       [0,1,2,3,4,5,6,7],
+};
+const CHROMATIC = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
+
+function getMelodyNotes() {
+  const root  = document.getElementById('rootSelect').value;
+  const scale = document.getElementById('scaleSelect').value;
+  const oct   = parseInt(document.getElementById('octaveSelect').value);
+  const ri    = CHROMATIC.indexOf(root);
+  return SCALES[scale].map(iv => {
+    const ni = (ri + iv) % 12;
+    const o  = oct + Math.floor((ri + iv) / 12);
+    return CHROMATIC[ni] + o;
+  });
+}
+
+function updateMelody() {
+  const notes = getMelodyNotes();
+  document.getElementById('scaleNotesDisplay').textContent = notes.join('  ');
+  buildRowLabels();
+  if (currentMode === 'melody' && isPlaying) rebuildMelSynth();
+}
+
+// ════════════════════════════════════════
+// TONE.JS AUDIO
+// ════════════════════════════════════════
+const lim = new Tone.Limiter(-2).toDestination();
+const rvb = new Tone.Reverb({ decay: 1.2, wet: 0.13 }).connect(lim);
+const dly = new Tone.FeedbackDelay('16n', 0.07).connect(rvb);
+let S = {};
+
+function disposeAll() {
+  Object.values(S).forEach(s => { try { s.dispose(); } catch(e){} });
+  S = {};
+  if (melSynth) { try { melSynth.dispose(); } catch(e){} melSynth = null; }
+}
+
+function rebuildMelSynth() {
+  if (melSynth) { try { melSynth.dispose(); } catch(e){} melSynth = null; }
+  if (currentMode !== 'melody') return;
+  const inst = document.getElementById('melInstrument').value;
+  if (inst === 'fmbell') {
+    melSynth = new Tone.PolySynth(Tone.FMSynth, {
+      harmonicity: 3, modulationIndex: 10,
+      envelope: { attack:.001, decay:.3, sustain:melSustain, release:.8 },
+      modulation: { type:'sine' },
+      modulationEnvelope: { attack:.002, decay:.2, sustain:.1, release:.5 }
+    }).connect(rvb);
+  } else if (inst === 'pluck') {
+    melSynth = new Tone.PolySynth(Tone.PluckSynth).connect(rvb);
+  } else {
+    melSynth = new Tone.PolySynth(Tone.Synth, {
+      oscillator: { type: inst },
+      envelope: { attack:.005, decay:.2, sustain:melSustain, release:.4 }
+    }).connect(rvb);
+  }
+}
+
+function buildSynths(mode) {
+  disposeAll();
+  if (mode === 'melody') { rebuildMelSynth(); return; }
+
+  if (mode === 'trap') {
+    S[0] = new Tone.MembraneSynth({pitchDecay:.08,octaves:8,envelope:{attack:.001,decay:.45,sustain:0}}).connect(lim);
+    S[1] = new Tone.NoiseSynth({noise:{type:'white'},envelope:{attack:.001,decay:.1,sustain:0}}).connect(rvb);
+    S[2] = new Tone.MetalSynth({frequency:420,envelope:{attack:.001,decay:.04,release:.01},harmonicity:3.1,modulationIndex:8,resonance:4200,octaves:1.5}).connect(lim);
+    S[3] = new Tone.MetalSynth({frequency:420,envelope:{attack:.001,decay:.28,release:.08},harmonicity:3.1,modulationIndex:8,resonance:4200,octaves:1.5}).connect(rvb);
+    S[4] = new Tone.Synth({oscillator:{type:'sine'},envelope:{attack:.001,decay:.9,sustain:0}}).connect(lim);
+    S[5] = new Tone.NoiseSynth({noise:{type:'pink'},envelope:{attack:.001,decay:.18,sustain:0}}).connect(rvb);
+    S[6] = new Tone.MembraneSynth({pitchDecay:.03,octaves:4,envelope:{attack:.001,decay:.14,sustain:0}}).connect(rvb);
+    S[7] = new Tone.MetalSynth({frequency:260,envelope:{attack:.001,decay:.9,release:.2},harmonicity:5.1,modulationIndex:32}).connect(rvb);
+  } else if (mode === 'techno') {
+    S[0] = new Tone.MembraneSynth({pitchDecay:.05,octaves:6,envelope:{attack:.001,decay:.22,sustain:0}}).connect(lim);
+    S[1] = new Tone.NoiseSynth({noise:{type:'white'},envelope:{attack:.001,decay:.07,sustain:0}}).connect(rvb);
+    S[2] = new Tone.MetalSynth({frequency:640,envelope:{attack:.001,decay:.035,release:.01},harmonicity:4,modulationIndex:10,resonance:5200,octaves:1.5}).connect(lim);
+    S[3] = new Tone.MetalSynth({frequency:640,envelope:{attack:.001,decay:.16,release:.05},harmonicity:4,modulationIndex:10,resonance:5200,octaves:1.5}).connect(rvb);
+    S[4] = new Tone.Synth({oscillator:{type:'sawtooth'},envelope:{attack:.001,decay:.28,sustain:0}}).connect(lim);
+    S[5] = new Tone.Synth({oscillator:{type:'square'},envelope:{attack:.001,decay:.09,sustain:0}}).connect(dly);
+    S[6] = new Tone.MetalSynth({frequency:840,envelope:{attack:.001,decay:.04},harmonicity:6,modulationIndex:12}).connect(dly);
+    S[7] = new Tone.MetalSynth({frequency:480,envelope:{attack:.001,decay:.38,release:.1},harmonicity:7,modulationIndex:20}).connect(rvb);
+  } else if (mode === 'jungle') {
+    S[0] = new Tone.MembraneSynth({pitchDecay:.07,octaves:7,envelope:{attack:.001,decay:.3,sustain:0}}).connect(lim);
+    S[1] = new Tone.NoiseSynth({noise:{type:'brown'},envelope:{attack:.001,decay:.22,sustain:0}}).connect(rvb);
+    S[2] = new Tone.MetalSynth({frequency:360,envelope:{attack:.001,decay:.035,release:.01},harmonicity:2,modulationIndex:6}).connect(lim);
+    S[3] = new Tone.MetalSynth({frequency:360,envelope:{attack:.001,decay:.22,release:.07},harmonicity:2,modulationIndex:6}).connect(rvb);
+    S[4] = new Tone.Synth({oscillator:{type:'sawtooth'},envelope:{attack:.001,decay:.14,sustain:.1,release:.05}}).connect(lim);
+    S[5] = new Tone.Synth({oscillator:{type:'triangle'},envelope:{attack:.001,decay:.5,sustain:0}}).connect(rvb);
+    S[6] = new Tone.Synth({oscillator:{type:'square'},envelope:{attack:.001,decay:.07,sustain:0}}).connect(dly);
+    S[7] = new Tone.MetalSynth({frequency:220,envelope:{attack:.001,decay:1,release:.3},harmonicity:5,modulationIndex:25}).connect(rvb);
+  } else {
+    S[0] = new Tone.MembraneSynth({pitchDecay:.12,octaves:10,envelope:{attack:.001,decay:.5,sustain:0}}).connect(lim);
+    S[1] = new Tone.MetalSynth({frequency:180,envelope:{attack:.001,decay:.35,release:.1},harmonicity:1,modulationIndex:45,resonance:1800}).connect(lim);
+    S[2] = new Tone.NoiseSynth({noise:{type:'white'},envelope:{attack:.001,decay:.22,sustain:.08,release:.1}}).connect(rvb);
+    S[3] = new Tone.NoiseSynth({noise:{type:'pink'},envelope:{attack:.001,decay:.4,sustain:.04,release:.18}}).connect(dly);
+    S[4] = new Tone.Synth({oscillator:{type:'square'},envelope:{attack:.001,decay:.6,sustain:0}}).connect(lim);
+    S[5] = new Tone.MetalSynth({frequency:120,envelope:{attack:.001,decay:.45,release:.15},harmonicity:3,modulationIndex:55}).connect(rvb);
+    S[6] = new Tone.NoiseSynth({noise:{type:'brown'},envelope:{attack:.001,decay:.32,sustain:.18,release:.28}}).connect(dly);
+    S[7] = new Tone.Synth({oscillator:{type:'sawtooth'},envelope:{attack:.4,decay:.5,sustain:.4,release:.8}}).connect(rvb);
+  }
+}
+
+const DRUM_NOTES = {
+  trap:       ['C1','C2',null,null,'C2','D2','G3','A4'],
+  techno:     ['C1','D2',null,null,'C2','C4',null,'G#4'],
+  jungle:     ['C1','D2',null,null,'C2','C3','C5','C4'],
+  industrial: ['C0','G1',null,null,'C1','C2',null,'A5'],
+};
+
+function triggerDrum(t, time) {
+  if (!S[t]) return;
+  const note = DRUM_NOTES[currentMode][t];
+  try {
+    if (!note || S[t] instanceof Tone.NoiseSynth) S[t].triggerAttackRelease(0.1, time);
+    else S[t].triggerAttackRelease(note, '16n', time);
+  } catch(e) { try { S[t].triggerAttackRelease(0.1, time); } catch(e2){} }
+}
+
+function triggerMelody(col, time) {
+  if (!melSynth) return;
+  const notes = getMelodyNotes();
+  const toPlay = [];
+  for (let t = 0; t < TRACKS; t++) { if (active[t][col] && notes[t]) toPlay.push(notes[t]); }
+  if (!toPlay.length) return;
+  try { melSynth.triggerAttackRelease(toPlay, '8n', time); } catch(e) {}
+}
+
+// ════════════════════════════════════════
+// SEQUENCER
+// ════════════════════════════════════════
+function startSeq() {
+  if (seq) { seq.stop(); seq.dispose(); seq = null; }
+  seq = new Tone.Sequence((time, step) => {
+    currentCol = step;
+    if (currentMode === 'melody') triggerMelody(step, time);
+    else for (let t = 0; t < TRACKS; t++) if (active[t][step]) triggerDrum(t, time);
+    Tone.getDraw().schedule(() => tickUI(step), time);
+  }, [...Array(STEPS).keys()], '16n');
+  seq.start(0);
+  Tone.getTransport().start();
+}
+
+function stopSeq() {
+  if (seq) { seq.stop(); seq.dispose(); seq = null; }
+  Tone.getTransport().stop();
+  currentCol = -1;
+  clearPlayhead();
+  document.getElementById('stepInfo').textContent = '——';
+}
+
+function tickUI(col) {
+  clearPlayhead();
+  for (let row = 0; row < 40; row++) {
+    const c = cellEls[row] && cellEls[row][col];
+    if (c) c.classList.add('now');
+  }
+  const hits = Array.from({length:TRACKS}, (_,t) => active[t][col]).filter(Boolean).length;
+  document.getElementById('stepInfo').textContent = `COL ${String(col+1).padStart(2,'0')} · ${hits} HIT${hits!==1?'S':''}`;
+
+  // Flash row labels
+  const labels = document.querySelectorAll('.row-label');
+  labels.forEach((el, t) => {
+    el.classList.remove('hit','mel-hit');
+    if (active[t][col]) el.classList.add(currentMode === 'melody' ? 'mel-hit' : 'hit');
+  });
+
+  // Draw export canvas frame
+  if (isRecording) drawExportFrame(col);
+}
+
+function clearPlayhead() {
+  document.querySelectorAll('.px.now').forEach(el => el.classList.remove('now'));
+}
+
+// ════════════════════════════════════════
+// PIXEL → ACTIVE
+// ════════════════════════════════════════
+function bitsToActive() {
+  if (!bits) return;
+  for (let t = 0; t < TRACKS; t++)
+    for (let s = 0; s < STEPS; s++) {
+      let sum = 0;
+      for (let r = 0; r < 5; r++) sum += bits[(t*5+r)*40+s];
+      active[t][s] = sum >= density ? 1 : 0;
+    }
+}
+function rebuildActive() { bitsToActive(); refreshActiveClass(); }
+
+// ════════════════════════════════════════
+// API
+// ════════════════════════════════════════
+const API = 'https://api.normies.art';
+
+async function apiFetch(path) {
+  const url = API + path;
+  try { const r = await fetch(url,{signal:AbortSignal.timeout(6000)}); if(r.ok) return r.text(); } catch(e){}
+  try { const r = await fetch('https://api.allorigins.win/get?url='+encodeURIComponent(url),{signal:AbortSignal.timeout(10000)}); if(r.ok){const j=await r.json();return j.contents;} } catch(e){}
+  try { const r = await fetch('https://corsproxy.io/?'+encodeURIComponent(url),{signal:AbortSignal.timeout(10000)}); if(r.ok) return r.text(); } catch(e){}
+  throw new Error('Network blocked — deploy to Vercel/Netlify to fix');
+}
+
+async function loadNormie() {
+  const id = document.getElementById('nftId').value.trim();
+  if (id==='') { st('loadStatus','Enter a token ID','err'); return; }
+  if (+id<0||+id>9999) { st('loadStatus','Token ID must be 0–9999','err'); return; }
+  st('loadStatus',`Loading Normie #${id}…`,'loading');
+  document.getElementById('loadBtn').disabled = true;
+  try {
+    const text = (await apiFetch(`/normie/${id}/pixels`)).trim();
+    if (text.length!==1600||!/^[01]+$/.test(text)) throw new Error('Unexpected pixel format');
+    bits = new Uint8Array(1600);
+    for (let i=0;i<1600;i++) bits[i]=text[i]==='1'?1:0;
+    normieId = id;
+    bitsToActive(); renderGrid(); fetchName(id);
+    const onCount = bits.reduce((a,b)=>a+b,0);
+    const steps   = active.reduce((s,r)=>s+r.reduce((a,b)=>a+b,0),0);
+    st('loadStatus',`#${id} loaded · ${onCount} pixels on · ${steps} active steps`,'ok');
+    document.getElementById('headerInfo').textContent = `NORMIE #${id}`;
+  } catch(e) { st('loadStatus',e.message,'err'); }
+  document.getElementById('loadBtn').disabled = false;
+}
+
+async function fetchName(id) {
+  try {
+    const text = await apiFetch(`/normie/${id}/metadata`);
+    const data = JSON.parse(text);
+    document.getElementById('nftName').textContent = data.name || `Normie #${id}`;
+  } catch(e) { document.getElementById('nftName').textContent = `Normie #${id}`; }
+}
+
+// ════════════════════════════════════════
+// GRID RENDER
+// ════════════════════════════════════════
+let cellEls = [];
+
+function buildGrid() {
+  const g = document.getElementById('pixelGrid');
+  g.innerHTML = ''; cellEls = [];
+  for (let row=0; row<40; row++) {
+    cellEls[row]=[];
+    for (let col=0; col<40; col++) {
+      const c = document.createElement('div');
+      c.className = 'px';
+      if ((row+1)%5===0 && row<39) c.classList.add('track-end');
+      cellEls[row][col] = c;
+      g.appendChild(c);
+    }
+  }
+}
+
+function renderGrid() {
+  if (!bits) return;
+  for (let row=0; row<40; row++) {
+    const track = Math.floor(row/5);
+    for (let col=0; col<40; col++) {
+      cellEls[row][col].classList.toggle('bit', bits[row*40+col]===1);
+      cellEls[row][col].classList.toggle('step-on', active[track][col]===1);
+    }
+  }
+}
+
+function refreshActiveClass() {
+  for (let row=0; row<40; row++) {
+    const track = Math.floor(row/5);
+    for (let col=0; col<40; col++)
+      cellEls[row][col].classList.toggle('step-on', active[track][col]===1);
+  }
+}
+
+// ════════════════════════════════════════
+// ROW LABELS  — 8 bands, left of grid
+// ════════════════════════════════════════
+function buildRowLabels() {
+  const el = document.getElementById('rowLabels');
+  el.innerHTML = '';
+  const names = (currentMode === 'melody') ? getMelodyNotes() : DRUM_MODES[currentMode];
+  for (let t=0; t<TRACKS; t++) {
+    const d = document.createElement('div');
+    d.className = 'row-label';
+    d.textContent = names[t];
+    el.appendChild(d);
+  }
+}
+
+// ════════════════════════════════════════
+// CONTROLS
+// ════════════════════════════════════════
+async function togglePlay() {
+  await Tone.start();
+  if (!isPlaying) {
+    buildSynths(currentMode); startSeq(); isPlaying = true;
+    document.getElementById('playBtn').textContent = '■ STOP';
+    document.getElementById('playBtn').classList.add('playing');
+  } else {
+    stopSeq(); isPlaying = false;
+    document.getElementById('playBtn').textContent = '▶ PLAY';
+    document.getElementById('playBtn').classList.remove('playing');
+  }
+}
+
+function setBPM(v) { Tone.getTransport().bpm.value = v; }
+
+function setMode(mode) {
+  currentMode = mode;
+  document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active','mel-active'));
+  const btn = document.getElementById(`mode-${mode}`);
+  btn.classList.add(mode==='melody' ? 'mel-active' : 'active');
+
+  const panel = document.getElementById('melodyPanel');
+  const grid  = document.getElementById('pixelGrid');
+  if (mode==='melody') {
+    panel.classList.add('visible');
+    grid.classList.add('mel-mode');
+    updateMelody();
+  } else {
+    panel.classList.remove('visible');
+    grid.classList.remove('mel-mode');
+  }
+  buildRowLabels();
+  if (isPlaying) buildSynths(mode);
+}
+
+function st(id, msg, type) {
+  const el = document.getElementById(id);
+  el.textContent = msg;
+  el.className = 'status ' + (type||'');
+}
+
+// ════════════════════════════════════════
+// VIDEO EXPORT
+// ════════════════════════════════════════
+let isRecording    = false;
+let mediaRecorder  = null;
+let recordedChunks = [];
+const EXPORT_DURATION = 30; // seconds
+const CANVAS_SIZE = 1080;
+const CELL = CANVAS_SIZE / 40;
+const LABEL_W = 80;
+const GRID_X  = LABEL_W;
+const GRID_W  = CANVAS_SIZE - LABEL_W;
+const CELL_W  = GRID_W / 40;
+
+function drawExportFrame(col) {
+  if (!bits) return;
+  const canvas = document.getElementById('recCanvas');
+  const ctx    = canvas.getContext('2d');
+  const bpm    = +document.getElementById('bpmRange').value;
+
+  // Background
+  ctx.fillStyle = '#f0f1f0';
+  ctx.fillRect(0, 0, CANVAS_SIZE, CANVAS_SIZE);
+
+  // Draw pixels + playhead
+  const trackNames = (currentMode==='melody') ? getMelodyNotes() : DRUM_MODES[currentMode];
+
+  for (let row=0; row<40; row++) {
+    const track = Math.floor(row/5);
+    const y = row * CELL;
+
+    // Row label band bg
+    if (row % 5 === 0) {
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, y, LABEL_W, CELL * 5);
+      ctx.strokeStyle = '#d0d2d0';
+      ctx.lineWidth = 1;
+      ctx.strokeRect(0, y, LABEL_W, CELL * 5);
+
+      // Label text — centered in the 5-row band
+      const isHit = active[track][col] === 1;
+      ctx.fillStyle = isHit
+        ? (currentMode==='melody' ? '#3a6ea8' : '#48494b')
+        : '#9a9b9a';
+      ctx.font = `bold ${CELL * 1.8}px 'Courier New', monospace`;
+      ctx.textAlign = 'right';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(trackNames[track], LABEL_W - 8, y + CELL * 2.5);
+
+      // Left accent bar
+      if (isHit) {
+        ctx.fillStyle = currentMode==='melody' ? '#3a6ea8' : '#48494b';
+        ctx.fillRect(0, y, 4, CELL * 5);
+      }
+    }
+
+    for (let c=0; c<40; c++) {
+      const x  = GRID_X + c * CELL_W;
+      const isOn  = bits[row*40+c]===1;
+      const isNow = c===col;
+      const isActive = active[track][c]===1;
+
+      if (isNow) {
+        // Playhead column — bright flash
+        ctx.fillStyle = isOn ? '#c8c9cb' : '#ffffff';
+      } else if (isOn) {
+        ctx.fillStyle = '#48494b';
+      } else if (isActive) {
+        ctx.fillStyle = currentMode==='melody'
+          ? 'rgba(58,110,168,0.12)'
+          : 'rgba(72,73,75,0.10)';
+      } else {
+        ctx.fillStyle = '#e3e5e4';
+      }
+      ctx.fillRect(x, y, CELL_W, CELL);
+    }
+
+    // Track separator line every 5 rows
+    if ((row+1)%5===0 && row<39) {
+      ctx.strokeStyle = 'rgba(72,73,75,0.22)';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(GRID_X, (row+1)*CELL);
+      ctx.lineTo(CANVAS_SIZE, (row+1)*CELL);
+      ctx.stroke();
+    }
+  }
+
+  // Header bar
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(0, 0, CANVAS_SIZE, 0); // no header — keep clean
+
+  // Footer: Normie ID + step + mode
+  const footerH = 36;
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(0, CANVAS_SIZE - footerH, CANVAS_SIZE, footerH);
+  ctx.strokeStyle = '#d0d2d0';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(0, CANVAS_SIZE - footerH);
+  ctx.lineTo(CANVAS_SIZE, CANVAS_SIZE - footerH);
+  ctx.stroke();
+
+  ctx.fillStyle = '#48494b';
+  ctx.font = `bold ${footerH * 0.45}px 'Courier New', monospace`;
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(`NORMIE #${normieId || '?'}`, 12, CANVAS_SIZE - footerH/2);
+
+  ctx.fillStyle = '#9a9b9a';
+  ctx.font = `${footerH * 0.4}px 'Courier New', monospace`;
+  ctx.textAlign = 'center';
+  ctx.fillText(`COL ${String(col+1).padStart(2,'0')} / ${STEPS}  ·  ${bpm} BPM  ·  ${currentMode.toUpperCase()}`, CANVAS_SIZE/2, CANVAS_SIZE - footerH/2);
+
+  ctx.fillStyle = '#9a9b9a';
+  ctx.textAlign = 'right';
+  ctx.fillText('normies.art', CANVAS_SIZE - 12, CANVAS_SIZE - footerH/2);
+}
+
+async function startExport() {
+  if (isRecording) return;
+  if (!bits) { alert('Load a Normie first!'); return; }
+
+  await Tone.start();
+
+  const exportBtn = document.getElementById('exportBtn');
+  const exportStatus = document.getElementById('exportStatus');
+  const progressWrap = document.getElementById('progressWrap');
+  const progressBar  = document.getElementById('progressBar');
+
+  // Was already playing? Keep it. Otherwise start.
+  const wasPlaying = isPlaying;
+  if (!isPlaying) {
+    buildSynths(currentMode);
+    startSeq();
+    isPlaying = true;
+    document.getElementById('playBtn').textContent = '■ STOP';
+    document.getElementById('playBtn').classList.add('playing');
+  }
+
+  // Set up audio capture from Tone.js context
+  const audioCtx = Tone.getContext().rawContext;
+  const audioDest = audioCtx.createMediaStreamDestination();
+  // Tap the master gain node
+  try { Tone.getDestination().output.connect(audioDest); } catch(e) {
+    try { audioCtx.destination._nativeAudioNode.connect(audioDest); } catch(e2) {}
+  }
+
+  // Canvas stream
+  const canvas = document.getElementById('recCanvas');
+  const canvasStream = canvas.captureStream(30);
+
+  // Combine
+  const combined = new MediaStream([
+    ...canvasStream.getVideoTracks(),
+    ...audioDest.stream.getAudioTracks()
+  ]);
+
+  // Pick best supported format
+  const mimeTypes = [
+    'video/mp4;codecs=h264,aac',
+    'video/mp4',
+    'video/webm;codecs=vp9,opus',
+    'video/webm;codecs=vp8,opus',
+    'video/webm',
+  ];
+  let mimeType = 'video/webm';
+  for (const m of mimeTypes) {
+    if (MediaRecorder.isTypeSupported(m)) { mimeType = m; break; }
+  }
+
+  recordedChunks = [];
+  mediaRecorder = new MediaRecorder(combined, { mimeType, videoBitsPerSecond: 8_000_000 });
+  mediaRecorder.ondataavailable = e => { if (e.data.size>0) recordedChunks.push(e.data); };
+  mediaRecorder.onstop = () => {
+    const blob = new Blob(recordedChunks, { type: mimeType });
+    const ext  = mimeType.includes('mp4') ? 'mp4' : 'webm';
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    a.href = url;
+    a.download = `normie-${normieId || 'seq'}-${Date.now()}.${ext}`;
+    a.click();
+    URL.revokeObjectURL(url);
+
+    isRecording = false;
+    exportBtn.textContent = '⬇ RECORD 30s LOOP · 1080×1080';
+    exportBtn.classList.remove('recording');
+    exportBtn.disabled = false;
+    exportStatus.textContent = `Done! Saved as .${ext}`;
+    progressWrap.classList.remove('visible');
+    progressBar.style.width = '0%';
+
+    if (!wasPlaying) {
+      stopSeq(); isPlaying = false;
+      document.getElementById('playBtn').textContent = '▶ PLAY';
+      document.getElementById('playBtn').classList.remove('playing');
+    }
+  };
+
+  mediaRecorder.start(100); // chunk every 100ms
+  isRecording = true;
+  exportBtn.textContent = '● RECORDING…';
+  exportBtn.classList.add('recording');
+  exportBtn.disabled = true;
+  progressWrap.classList.add('visible');
+
+  // Draw first frame immediately
+  drawExportFrame(currentCol >= 0 ? currentCol : 0);
+
+  // Progress countdown
+  const startTime = Date.now();
+  const interval = setInterval(() => {
+    const elapsed = (Date.now() - startTime) / 1000;
+    const pct = Math.min(elapsed / EXPORT_DURATION * 100, 100);
+    progressBar.style.width = pct + '%';
+    exportStatus.textContent = `Recording ${Math.ceil(EXPORT_DURATION - elapsed)}s remaining…`;
+    if (elapsed >= EXPORT_DURATION) {
+      clearInterval(interval);
+      if (mediaRecorder && mediaRecorder.state !== 'inactive') mediaRecorder.stop();
+    }
+  }, 250);
+}
+
+// ════════════════════════════════════════
+// INIT
+// ════════════════════════════════════════
+function init() {
+  buildGrid();
+  buildRowLabels();
+  setBPM(120);
+  updateMelody();
+  // Draw blank export canvas
+  const ctx = document.getElementById('recCanvas').getContext('2d');
+  ctx.fillStyle = '#e3e5e4'; ctx.fillRect(0,0,1080,1080);
+}
+
+init();
+</script>
+</body>
+</html>
